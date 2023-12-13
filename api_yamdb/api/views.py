@@ -1,9 +1,11 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
+from rest_framework import filters, permissions, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 
-from api.serializers import (CategorySerializer, GenreSerializer,
-                             TitleSerializer)
+from api.serializers import (CategorySerializer,
+                             GenreSerializer,
+                             TitleSafeRequestSerializer,
+                             TitleUnsafeRequestSerializer)
 from reviews.models import Category, Genre, Title
 
 
@@ -50,7 +52,16 @@ class TitleViewSet(viewsets.ModelViewSet):
     Класс-обработчик API-запросов произведениям.
     """
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('name', 'year', 'genre__slug', 'category__slug')
+
+    def get_serializer_class(self):
+        """
+        Переопределение стандартного метода.
+        В зависимости от метода запроса
+        используется соответствующий сериализатор.
+        """
+        if self.request.method in permissions.SAFE_METHODS:
+            return TitleSafeRequestSerializer
+        return TitleUnsafeRequestSerializer

@@ -31,7 +31,7 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         related_name='titles_for_genre',
-        blank=True
+        blank=True,
     )
     category = models.ForeignKey(
         Category,
