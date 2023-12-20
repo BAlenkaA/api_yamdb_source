@@ -6,7 +6,6 @@ from reviews.models import Category, CustomUser, Genre, Review, Title
 from rest_framework.relations import SlugRelatedField
 
 
-
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор категории произведения."""
 
@@ -119,9 +118,21 @@ class CustomUserSerializer(serializers.ModelSerializer):
         max_length=254,
         validators=[UniqueValidator(queryset=CustomUser.objects.all())]
     )
-    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    bio = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    first_name = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=True
+    )
+    last_name = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=True
+    )
+    bio = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True
+    )
     role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES)
 
 
@@ -144,12 +155,17 @@ class CustomTokenObtainPairSerialiser(serializers.ModelSerializer):
         confirmation_code = attrs.get('confirmation_code')
 
         if not username or not confirmation_code:
-            raise serializers.ValidationError('Необходимо указать username и confirmation_code')
+            raise serializers.ValidationError('Необходимо указать username'
+                                              ' и confirmation_code')
 
         try:
-            user = CustomUser.objects.get(username=username, confirmation_code=confirmation_code)
+            user = CustomUser.objects.get(
+                username=username,
+                confirmation_code=confirmation_code
+            )
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError('Пользователь с указанными данными не найден')
+            raise serializers.ValidationError('Пользователь с указанными'
+                                              ' данными не найден')
 
     class Meta(ParentMeta):
         fields = ('token', 'username', 'confirmation_code')

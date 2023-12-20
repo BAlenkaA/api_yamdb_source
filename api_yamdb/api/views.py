@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-from api.permissions import IsAdminUser, IsOwner, IsOwnerAdminModeratorOrReadOnly
+from api.permissions import IsAdminUser, IsOwner
 from api.serializers import (CategorySerializer,
                              CommentSerializer,
                              GenreSerializer,
@@ -28,15 +28,13 @@ from api.serializers import (CategorySerializer,
 from reviews.models import Category, CustomUser, Genre, Review, Title
 
 
-
 class CommentViewSet(viewsets.ModelViewSet):
     """
     Класс-обработчик API-запросов к комментариям к отзывам на произведения.
     """
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                          IsOwnerAdminModeratorOrReadOnly)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
@@ -59,8 +57,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                          IsOwnerAdminModeratorOrReadOnly)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -123,7 +120,12 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 def generate_confirmation_code():
     confirmation_code_length = 6
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=confirmation_code_length))
+    return ''.join(
+        random.choices(
+            string.ascii_uppercase + string.digits,
+            k=confirmation_code_length
+        )
+    )
 
 
 class UserSignUpView(CreateAPIView):
@@ -147,7 +149,8 @@ class UserSignUpView(CreateAPIView):
             [user.email],
             fail_silently=False,
         )
-        return Response({'detail': 'Confirmation code sent'}, status=status.HTTP_201_CREATED)
+        return Response({'detail': 'Confirmation code sent'},
+                        status=status.HTTP_201_CREATED)
 
 
 class CustomTokenObtainPairView(CreateAPIView):
@@ -160,7 +163,10 @@ class CustomTokenObtainPairView(CreateAPIView):
         confirmation_code = request.data.get('confirmation_code')
 
         try:
-            user = CustomUser.objects.get(username=username, confirmation_code=confirmation_code)
+            user = CustomUser.objects.get(
+                username=username,
+                confirmation_code=confirmation_code
+            )
         except CustomUser.DoesNotExist:
             return Response({'error': ''}, status=404)
 
@@ -182,7 +188,8 @@ class UserProfileView(APIView):
         serializer = UserProfileSerializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+            return Response(serializer.validated_data,
+                            status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

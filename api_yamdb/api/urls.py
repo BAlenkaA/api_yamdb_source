@@ -43,7 +43,8 @@ urlpatterns = [
         'auth/signup/',
         UserSignUpView.as_view(), name='registration',
     ),
-    path('auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/', CustomTokenObtainPairView.as_view(),
+         name='token_obtain_pair'),
     path('users/me/', UserProfileView.as_view(), name='user-profile'),
 ]
 urlpatterns += router_users.urls

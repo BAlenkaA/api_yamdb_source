@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -12,11 +11,31 @@ class CustomUser(AbstractUser):
     )
 
     bio = models.TextField('Биография', blank=True)
-    role = models.CharField('Роль', choices=ROLE_CHOICES, default='user', max_length=20)
-    confirmation_code = models.CharField('Confirmation Code', max_length=100, blank=True, null=True)
+    role = models.CharField(
+        'Роль',
+        choices=ROLE_CHOICES,
+        default='user',
+        max_length=20
+    )
+    confirmation_code = models.CharField(
+        'Confirmation Code',
+        max_length=100,
+        blank=True,
+        null=True
+    )
 
-    username = models.CharField('Имя пользователя', max_length=150, unique=True)
-    email = models.EmailField('Email адрес', max_length=254, unique=True, blank=False, null=False)
+    username = models.CharField(
+        'Имя пользователя',
+        max_length=150,
+        unique=True
+    )
+    email = models.EmailField(
+        'Email адрес',
+        max_length=254,
+        unique=True,
+        blank=False,
+        null=False
+    )
 
 
 class Genre(models.Model):
@@ -67,7 +86,7 @@ class Review(models.Model):
         verbose_name='Отзыв')
     text = models.TextField(verbose_name='Текст отзыва')
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        CustomUser, on_delete=models.CASCADE,
         verbose_name='Автор отзыва')
     score = models.IntegerField(
         validators=[
@@ -95,7 +114,7 @@ class Comment(models.Model):
         verbose_name='Отзыв')
     text = models.TextField(verbose_name='Текст комментария')
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        CustomUser, on_delete=models.CASCADE,
         verbose_name='Автор комментария')
     pub_date = models.DateTimeField(verbose_name='Дата комментария',
                                     auto_now_add=True)
