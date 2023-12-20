@@ -2,8 +2,9 @@ from django.core.validators import RegexValidator
 from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-
 from reviews.models import Category, CustomUser, Genre, Review, Title
+from rest_framework.relations import SlugRelatedField
+
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,6 +25,25 @@ class GenreSerializer(serializers.ModelSerializer):
         lookup_field = 'slug'
 
 
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор отзыва на произведение."""
+    author = SlugRelatedField(slug_field='username', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        read_only_fields = ('title', 'pub_date')
+
+    def validate(self, data):
+        if Review.objects.filter(author=data['author'],
+                                 title=self.context['view'].
+                                 kwargs['title_id']).exists():
+            raise serializers.ValidationError(
+                'Нельзя отправить отзыв на этот фильм второй раз')
+        else:
+            return data
+
+
 class TitleSafeRequestSerializer(serializers.ModelSerializer):
     """
     Сериализатор произведения для безопасных запросов.
@@ -31,11 +51,18 @@ class TitleSafeRequestSerializer(serializers.ModelSerializer):
     """
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
+    rating = serializers.SerializerMethodField()
+
+    def get_rating(self, obj):
+        if Review.objects.values('score').filter(title=obj.id):
+            return int((Review.objects.filter(title=obj.id).
+                        aggregate(Avg('score')))['score__avg'])
+        return 0
 
     class Meta:
         model = Title
         fields = ("id", "name", "year",
-                  "description", "genre", "category",)
+                  "description", "genre", "category", "rating")
 
 
 class TitleUnsafeRequestSerializer(serializers.ModelSerializer):
@@ -68,8 +95,7 @@ class TitleUnsafeRequestSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор комментария к отзыву на произведение."""
-
-    pass
+    author = SlugRelatedField(slug_field='username', read_only=True)
 
 
 class ReviewSerializer(serializers.ModelSerializer):

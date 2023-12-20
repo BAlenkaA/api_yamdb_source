@@ -3,6 +3,7 @@ import string
 
 from django.core.mail import send_mail
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets, status
 from rest_framework.generics import CreateAPIView
@@ -12,30 +13,68 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.permissions import IsAdminUser, IsOwner
+
+from api.permissions import IsAdminUser, IsOwner, IsOwnerAdminModeratorOrReadOnly
 from api.serializers import (CategorySerializer,
+                             CommentSerializer,
                              GenreSerializer,
+                             ReviewSerializer,
                              TitleSafeRequestSerializer,
                              TitleUnsafeRequestSerializer,
                              UserSignUpSerializer,
                              UserProfileSerializer,
                              CustomTokenObtainPairSerialiser,
                              UserSerializer)
-from reviews.models import Category, CustomUser, Genre, Title
+from reviews.models import Category, CustomUser, Genre, Review, Title
+
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """
     Класс-обработчик API-запросов к комментариям к отзывам на произведения.
     """
-    pass
+    serializer_class = CommentSerializer
+    pagination_class = LimitOffsetPagination
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerAdminModeratorOrReadOnly)
+
+    def get_review(self):
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        return review
+
+    def get_queryset(self):
+        review = self.get_review()
+        return review.comments_for_review.all()
+
+    def perform_create(self, serializer):
+        review = self.get_review()
+        serializer.save(review=review,
+                        author=self.request.user)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """
     Класс-обработчик API-запросов к отзывам на произведения.
     """
-    pass
+    serializer_class = ReviewSerializer
+    pagination_class = LimitOffsetPagination
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerAdminModeratorOrReadOnly)
+
+    def get_title(self):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        return title
+
+    def get_queryset(self):
+        title = self.get_title()
+        return title.reviews_for_title.all()
+
+    def perform_create(self, serializer):
+        title = self.get_title()
+        serializer.save(title=title,
+                        author=self.request.user)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
