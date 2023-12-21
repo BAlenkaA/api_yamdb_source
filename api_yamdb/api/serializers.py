@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.models import Avg
 from rest_framework import serializers
@@ -39,8 +40,7 @@ class ReviewSerializer(serializers.ModelSerializer):
                                  kwargs['title_id']).exists():
             raise serializers.ValidationError(
                 'Нельзя отправить отзыв на этот фильм второй раз')
-        else:
-            return data
+        return data
 
 
 class TitleSafeRequestSerializer(serializers.ModelSerializer):
@@ -103,7 +103,14 @@ class ReviewSerializer(serializers.ModelSerializer):
     pass
 
 
+def validate_username_not_me(value):
+    """Валидатор, запрещающий использование me в качестве username."""
+    if value.lower() == 'me':
+        raise ValidationError("Username cannot be 'me'.")
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор Пользователя."""
     username = serializers.CharField(
         max_length=150,
         validators=[
@@ -111,7 +118,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             RegexValidator(
                 regex=r'^[\w.@+-]+\Z',
                 message='Используются недопустимые символы в username'
-            )
+            ), validate_username_not_me
         ]
     )
     email = serializers.EmailField(
@@ -133,50 +140,45 @@ class CustomUserSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True
     )
-    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES)
+    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES, required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
 
-class ParentMeta:
-    model = CustomUser
-    fields = ('username', 'email')
+class CustomTokenObtainPairSerializer(serializers.ModelSerializer):
+    """Сериализатор токена."""
 
-
-class UserSignUpSerializer(CustomUserSerializer):
-
-    class Meta(ParentMeta):
-        pass
-
-
-class CustomTokenObtainPairSerialiser(serializers.ModelSerializer):
-    token = serializers.CharField(max_length=255, read_only=True)
-
-    def validate(self, attrs):
-        username = attrs.get('username')
-        confirmation_code = attrs.get('confirmation_code')
+    def validate(self, data):
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
 
         if not username or not confirmation_code:
-            raise serializers.ValidationError('Необходимо указать username'
-                                              ' и confirmation_code')
+            raise serializers.ValidationError('Необходимо указать username и confirmation_code')
 
         try:
-            user = CustomUser.objects.get(
-                username=username,
-                confirmation_code=confirmation_code
-            )
+            user = CustomUser.objects.get(username=username, confirmation_code=confirmation_code)
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError('Пользователь с указанными'
-                                              ' данными не найден')
+            raise serializers.ValidationError('Пользователь с указанными данными не найден')
 
-    class Meta(ParentMeta):
-        fields = ('token', 'username', 'confirmation_code')
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'confirmation_code')
 
 
 class UserProfileSerializer(CustomUserSerializer):
-    class Meta(ParentMeta):
-        fields = ParentMeta.fields + ('first_name', 'last_name', 'bio', 'role')
-        read_only_fields = ('role',)
+    """Сериализатор управления профилем пользователя."""
+    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES, read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta(ParentMeta):
-        fields = ParentMeta.fields + ('first_name', 'last_name', 'bio', 'role')
+class UserSerializer(CustomUserSerializer):
+    """Сериализатор администратора."""
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
