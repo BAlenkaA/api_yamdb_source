@@ -39,12 +39,9 @@ urlpatterns = [
          include(router_review.urls)),
     path('titles/<int:title_id>/reviews/<int:review_id>/',
          include(router_comment.urls)),
-    path(
-        'auth/signup/',
-        UserSignUpView.as_view(), name='registration',
-    ),
     path('auth/token/', CustomTokenObtainPairView.as_view(),
          name='token_obtain_pair'),
+    path('auth/signup/', UserSignUpView.as_view(), name='registration'),
     path('users/me/', UserProfileView.as_view(), name='user-profile'),
 ]
 urlpatterns += router_users.urls
