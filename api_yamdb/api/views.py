@@ -11,22 +11,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, CustomUser, Genre, Review, Title
 
 from api.filters import TitleFilter
 from api.permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
                              IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
-from api.serializers import (CategorySerializer,
-                             CommentSerializer,
+from api.serializers import (CategorySerializer, CommentSerializer,
                              CustomTokenObtainPairSerializer,
-                             CustomUserSerializer,
-                             GenreSerializer,
-                             ReviewPatchSerializer,
-                             ReviewSerializer,
+                             CustomUserSerializer, GenreSerializer,
+                             ReviewPatchSerializer, ReviewSerializer,
                              TitleSafeRequestSerializer,
                              TitleUnsafeRequestSerializer,
-                             UserProfileSerializer,
-                             UserSerializer)
-from reviews.models import Category, CustomUser, Genre, Review, Title
+                             UserProfileSerializer, UserSerializer)
 
 
 class ListCreateDeleteModelViewSet(mixins.ListModelMixin,
