@@ -1,6 +1,16 @@
 import random
 import string
 
+from api.filters import TitleFilter
+from api.permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
+                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             CustomTokenObtainPairSerializer,
+                             CustomUserSerializer, GenreSerializer,
+                             ReviewPatchSerializer, ReviewSerializer,
+                             TitleSafeRequestSerializer,
+                             TitleUnsafeRequestSerializer,
+                             UserProfileSerializer, UserSerializer)
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,17 +22,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, CustomUser, Genre, Review, Title
-
-from api.filters import TitleFilter
-from api.permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
-                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
-from api.serializers import (CategorySerializer, CommentSerializer,
-                             CustomTokenObtainPairSerializer,
-                             CustomUserSerializer, GenreSerializer,
-                             ReviewPatchSerializer, ReviewSerializer,
-                             TitleSafeRequestSerializer,
-                             TitleUnsafeRequestSerializer,
-                             UserProfileSerializer, UserSerializer)
 
 
 class ListCreateDeleteModelViewSet(mixins.ListModelMixin,
@@ -60,7 +59,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     Класс-обработчик API-запросов к отзывам на произведения.
     """
     permission_classes = (IsOwnerIsModeratorIsAdminOrReadOnly,)
-    http_method_names = ['get', 'post', 'patch', 'delete',]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')

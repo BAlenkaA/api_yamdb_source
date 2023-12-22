@@ -1,10 +1,9 @@
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter, SimpleRouter
-
 from api.views import (CategoryViewSet, CommentViewSet,
                        CustomTokenObtainPairView, GenreViewSet, ReviewViewSet,
                        TitleViewSet, UserProfileView, UserSignUpView,
                        UserViewSet)
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter, SimpleRouter
 
 router_title_genre_category = DefaultRouter()
 router_title_genre_category.register(
