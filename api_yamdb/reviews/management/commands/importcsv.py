@@ -1,10 +1,9 @@
 import os
 
+import pandas
 from django import apps
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-import pandas
-
 from reviews.models import Category, Comment, Genre, Review, Title
 
 
