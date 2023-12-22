@@ -66,7 +66,6 @@ class TitleSafeRequestSerializer(serializers.ModelSerializer):
         if Review.objects.values('score').filter(title=obj.id):
             return int((Review.objects.filter(title=obj.id).
                         aggregate(Avg('score')))['score__avg'])
-        return None
 
     class Meta:
         model = Title

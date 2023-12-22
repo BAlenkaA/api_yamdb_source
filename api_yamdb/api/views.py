@@ -4,7 +4,7 @@ import string
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, viewsets, status
+from rest_framework import filters, mixins, permissions, viewsets, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,10 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
-from api.permissions import (IsAdminUser,
-                             IsOwner,
-                             IsOwnerIsModeratorIsAdminOrReadOnly)
+from api.filters import TitleFilter
+from api.permissions import IsAdminUser, IsModeratorIsAdminOrReadonly, IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly
 from api.serializers import (CategorySerializer,
                              CommentSerializer,
                              GenreSerializer,
@@ -27,6 +25,13 @@ from api.serializers import (CategorySerializer,
                              CustomTokenObtainPairSerializer,
                              UserSerializer, CustomUserSerializer)
 from reviews.models import Category, CustomUser, Genre, Review, Title
+
+
+class ListCreateDeleteModelViewSet(mixins.ListModelMixin,
+                                   mixins.CreateModelMixin,
+                                   mixins.DestroyModelMixin,
+                                   viewsets.GenericViewSet):
+    pass
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -81,28 +86,28 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return ReviewSerializer
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(ListCreateDeleteModelViewSet):
     """
     Класс-обработчик API-запросов к категориям произведений.
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    permission_classes = (IsModeratorIsAdminOrReadonly,)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(ListCreateDeleteModelViewSet):
     """
     Класс-обработчик API-запросов к жанрам произведений.
     """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    permission_classes = (IsModeratorIsAdminOrReadonly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -110,9 +115,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     Класс-обработчик API-запросов произведениям.
     """
     queryset = Title.objects.all()
-    pagination_class = LimitOffsetPagination
+    http_method_names = ('get', 'post', 'patch', 'delete',)
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name', 'year', 'genre__slug', 'category__slug')
+    filterset_class = TitleFilter
+    permission_classes = (IsModeratorIsAdminOrReadonly,)
 
     def get_serializer_class(self):
         """

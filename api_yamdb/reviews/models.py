@@ -41,7 +41,7 @@ class CustomUser(AbstractUser):
 class Genre(models.Model):
     """Модель жанра произведения."""
     name = models.CharField(max_length=256)
-    slug = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name
@@ -50,7 +50,7 @@ class Genre(models.Model):
 class Category(models.Model):
     """Модель категории произведения."""
     name = models.CharField(max_length=256)
-    slug = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name

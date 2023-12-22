@@ -3,7 +3,6 @@ import os
 from django import apps
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-
 import pandas
 
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -18,6 +17,7 @@ class Command(BaseCommand):
 
     CSV_DIRECTORY = os.getcwd() + "/static/data/"
     CSV_TO_MODEL_CORRESPONDENCE = {
+        'users.csv': get_user_model(),
         'category.csv': Category,
         'genre.csv': Genre,
         'titles.csv': Title,
@@ -27,21 +27,26 @@ class Command(BaseCommand):
         ),
         'review.csv': Review,
         'comments.csv': Comment,
-        'users.csv': get_user_model(),
     }
 
-    def fix_titles_table(self):
-        """Функция, исправляющая ошибку в названии столбца
-        "category_id" в файле "titles.csv"."""
-        titles_df = pandas.read_csv(self.CSV_DIRECTORY + 'titles.csv')
-        titles_df.rename(columns={"category": "category_id"}, inplace=True)
-        titles_df.to_csv(self.CSV_DIRECTORY + 'titles.csv', index=False)
+    def fix_tables(self):
+        """Функция, исправляющая ошибки в названии столбцов в
+        файлах "titles.csv", "review.csv", "comments.csv"."""
+        replace_dict = {
+            "titles.csv": "category",
+            "review.csv": "author",
+            "comments.csv": "author"
+        }
+        for csv_file, column in replace_dict.items():
+            file_df = pandas.read_csv(self.CSV_DIRECTORY + csv_file)
+            file_df.rename(columns={column: column + "_id"}, inplace=True)
+            file_df.to_csv(self.CSV_DIRECTORY + csv_file, index=False)
 
     def handle(self, *args, **options):
         text_color_green = '\033[32m'
         text_color_red = '\033[31m'
         text_color_reset = '\033[0m'
-        self.fix_titles_table()
+        self.fix_tables()
         for csv_file, model in self.CSV_TO_MODEL_CORRESPONDENCE.items():
             dump_data = list(model.objects.values())
             try:
