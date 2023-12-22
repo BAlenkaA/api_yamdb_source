@@ -2,8 +2,8 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter, SimpleRouter
 
 from api.views import (CategoryViewSet, CommentViewSet,
-                       GenreViewSet, ReviewViewSet, TitleViewSet,
-                       UserSignUpView, CustomTokenObtainPairView,
+                       CustomTokenObtainPairView, GenreViewSet,
+                       ReviewViewSet, TitleViewSet, UserSignUpView,
                        UserProfileView, UserViewSet)
 
 router_title_genre_category = DefaultRouter()

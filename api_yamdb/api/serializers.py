@@ -2,9 +2,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.models import Avg
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-from reviews.models import Category, Comment, CustomUser, Genre, Review, Title
 from rest_framework.relations import SlugRelatedField
+from rest_framework.validators import UniqueValidator
+
+from reviews.models import Category, Comment, CustomUser, Genre, Review, Title
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -44,7 +45,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class ReviewPatchSerializer(serializers.ModelSerializer):
-    """Сериализатор отзыва на произведение."""
     author = SlugRelatedField(slug_field='username', read_only=True)
 
     class Meta:
@@ -148,11 +148,15 @@ class CustomUserSerializer(serializers.ModelSerializer):
         required=False,
         allow_blank=True
     )
-    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES, required=False)
+    role = serializers.ChoiceField(
+        choices=CustomUser.ROLE_CHOICES,
+        required=False
+    )
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
 
 
 class CustomTokenObtainPairSerializer(serializers.ModelSerializer):
@@ -163,12 +167,15 @@ class CustomTokenObtainPairSerializer(serializers.ModelSerializer):
         confirmation_code = data.get('confirmation_code')
 
         if not username or not confirmation_code:
-            raise serializers.ValidationError('Необходимо указать username и confirmation_code')
+            raise serializers.ValidationError('Необходимо указать username'
+                                              ' и confirmation_code')
 
         try:
-            user = CustomUser.objects.get(username=username, confirmation_code=confirmation_code)
+            CustomUser.objects.get(username=username,
+                                   confirmation_code=confirmation_code)
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError('Пользователь с указанными данными не найден')
+            raise serializers.ValidationError('Пользователь с указанными'
+                                              ' данными не найден')
 
     class Meta:
         model = CustomUser
@@ -177,11 +184,13 @@ class CustomTokenObtainPairSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(CustomUserSerializer):
     """Сериализатор управления профилем пользователя."""
-    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES, read_only=True)
+    role = serializers.ChoiceField(choices=CustomUser.ROLE_CHOICES,
+                                   read_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
 
 
 class UserSerializer(CustomUserSerializer):
@@ -189,4 +198,5 @@ class UserSerializer(CustomUserSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')

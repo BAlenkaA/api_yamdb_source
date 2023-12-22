@@ -4,26 +4,28 @@ import string
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, permissions, viewsets, status
+from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.generics import CreateAPIView
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.filters import TitleFilter
-from api.permissions import IsAdminUser, IsModeratorIsAdminOrReadonly, IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly
+from api.permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
+                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
 from api.serializers import (CategorySerializer,
                              CommentSerializer,
+                             CustomTokenObtainPairSerializer,
+                             CustomUserSerializer,
                              GenreSerializer,
-                             ReviewSerializer,
                              ReviewPatchSerializer,
+                             ReviewSerializer,
                              TitleSafeRequestSerializer,
                              TitleUnsafeRequestSerializer,
                              UserProfileSerializer,
-                             CustomTokenObtainPairSerializer,
-                             UserSerializer, CustomUserSerializer)
+                             UserSerializer)
 from reviews.models import Category, CustomUser, Genre, Review, Title
 
 
@@ -39,9 +41,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     Класс-обработчик API-запросов к комментариям к отзывам на произведения.
     """
     serializer_class = CommentSerializer
-    pagination_class = LimitOffsetPagination
     permission_classes = (IsOwnerIsModeratorIsAdminOrReadOnly,)
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ('get', 'post', 'patch', 'delete',)
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
@@ -62,9 +63,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
     Класс-обработчик API-запросов к отзывам на произведения.
     """
-    pagination_class = LimitOffsetPagination
-    permission_classes = [IsOwnerIsModeratorIsAdminOrReadOnly]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = (IsOwnerIsModeratorIsAdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete',]
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -155,7 +155,10 @@ class UserSignUpView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         username = request.data.get('username')
         email = request.data.get('email')
-        existing_user = CustomUser.objects.filter(username=username, email=email).exists()
+        existing_user = CustomUser.objects.filter(
+            username=username,
+            email=email
+        ).exists()
         if existing_user:
             return Response(status=status.HTTP_200_OK)
 
@@ -194,13 +197,17 @@ class CustomTokenObtainPairView(CreateAPIView):
         if username and confirmation_code:
             user = get_object_or_404(CustomUser, username=username)
             if user.confirmation_code != confirmation_code:
-                return Response({'error': 'Проверьте корректность введеных данных'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Проверьте корректность введеных данных'},
+                    status=status.HTTP_400_BAD_REQUEST)
 
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
             return Response({'token': access_token}, status=status.HTTP_200_OK)
 
-        return Response({'error': 'Проверьте корректность введеных данных'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': 'Проверьте корректность введеных данных'},
+            status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserProfileView(APIView):
@@ -216,7 +223,11 @@ class UserProfileView(APIView):
 
     def patch(self, request):
         user = request.user
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
+        serializer = UserProfileSerializer(
+            user,
+            data=request.data,
+            partial=True
+        )
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.validated_data,
@@ -231,7 +242,6 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminUser,)
-    pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
@@ -239,7 +249,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         username = request.data.get('username')
         email = request.data.get('email')
-        existing_user = CustomUser.objects.filter(username=username, email=email).exists()
+        existing_user = CustomUser.objects.filter(
+            username=username,
+            email=email
+        ).exists()
         if existing_user:
             return Response(status=status.HTTP_200_OK)
         serializer = self.get_serializer(data=request.data)
@@ -252,7 +265,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
