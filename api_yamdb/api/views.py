@@ -13,11 +13,14 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
-from api.permissions import IsAdminUser, IsOwner
+from api.permissions import (IsAdminUser,
+                             IsOwner,
+                             IsOwnerIsModeratorIsAdminOrReadOnly)
 from api.serializers import (CategorySerializer,
                              CommentSerializer,
                              GenreSerializer,
                              ReviewSerializer,
+                             ReviewPatchSerializer,
                              TitleSafeRequestSerializer,
                              TitleUnsafeRequestSerializer,
                              UserProfileSerializer,
@@ -32,7 +35,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
     serializer_class = CommentSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsOwnerIsModeratorIsAdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
@@ -53,9 +57,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
     Класс-обработчик API-запросов к отзывам на произведения.
     """
-    serializer_class = ReviewSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = [IsOwnerIsModeratorIsAdminOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -70,6 +74,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = self.get_title()
         serializer.save(title=title,
                         author=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return ReviewPatchSerializer
+        return ReviewSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
