@@ -17,8 +17,7 @@ from .filters import TitleFilter
 from .permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly, IsOwner,
                           IsOwnerIsModeratorIsAdminOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
-                          CustomTokenCodeValidate, CustomTokenDateNotNull,
-                          CustomUserSerializer, GenreSerializer,
+                          CustomUserSerializer, CustomTokenDateNotNull, CustomTokenCodeValidate, GenreSerializer,
                           ReviewPatchSerializer, ReviewSerializer,
                           TitleSafeRequestSerializer,
                           TitleUnsafeRequestSerializer, UserProfileSerializer,
@@ -42,8 +41,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(Review, id=review_id)
-        return review
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Review, id=review_id, title_id=title_id)
 
     def get_queryset(self):
         review = self.get_review()
@@ -64,8 +63,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
-        return title
+        return get_object_or_404(Title, id=title_id)
 
     def get_queryset(self):
         title = self.get_title()

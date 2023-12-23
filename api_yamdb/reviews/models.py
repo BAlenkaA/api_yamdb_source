@@ -3,6 +3,10 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
+MIN_SCORE = 1
+MAX_SCORE = 10
+
+
 class CustomUser(AbstractUser):
     USER = 'user'
     MODERATOR = 'moderator'
@@ -106,11 +110,11 @@ class Review(models.Model):
     text = models.TextField(verbose_name='Текст отзыва')
     author = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE,
-        verbose_name='Автор отзыва')
-    score = models.IntegerField(
+        verbose_name='Автор отзыва', related_name='reviews_for_author')
+    score = models.PositiveSmallIntegerField(
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(10)
+            MinValueValidator(MIN_SCORE),
+            MaxValueValidator(MAX_SCORE)
         ], verbose_name='Оценка'
     )
     pub_date = models.DateTimeField(verbose_name='Дата отзыва',
