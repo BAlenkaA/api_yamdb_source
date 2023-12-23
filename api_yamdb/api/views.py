@@ -1,6 +1,4 @@
-import random
-import string
-
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,18 +9,20 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, CustomUser, Genre, Review, Title
+
+from api_yamdb import settings
 
 from .filters import TitleFilter
-from .permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
-                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
+from .permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly, IsOwner,
+                          IsOwnerIsModeratorIsAdminOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
-                             CustomTokenObtainPairSerializer,
-                             CustomUserSerializer, GenreSerializer,
-                             ReviewPatchSerializer, ReviewSerializer,
-                             TitleSafeRequestSerializer,
-                             TitleUnsafeRequestSerializer,
-                             UserProfileSerializer, UserSerializer)
-from reviews.models import Category, CustomUser, Genre, Review, Title
+                          CustomTokenCodeValidate, CustomTokenDateNotNull,
+                          CustomUserSerializer, GenreSerializer,
+                          ReviewPatchSerializer, ReviewSerializer,
+                          TitleSafeRequestSerializer,
+                          TitleUnsafeRequestSerializer, UserProfileSerializer,
+                          UserSerializer)
 
 
 class ListCreateDeleteModelViewSet(mixins.ListModelMixin,
@@ -127,19 +127,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         return TitleUnsafeRequestSerializer
 
 
-def generate_confirmation_code():
-    """
-    Функция, создающая confirmation code.
-    """
-    confirmation_code_length = 6
-    return ''.join(
-        random.choices(
-            string.ascii_uppercase + string.digits,
-            k=confirmation_code_length
-        )
-    )
-
-
 class UserSignUpView(CreateAPIView):
     """
     Класс-создатель нового пользователя.
@@ -149,34 +136,32 @@ class UserSignUpView(CreateAPIView):
     permission_classes = (AllowAny,)
 
     def create(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        email = request.data.get('email')
-        existing_user = CustomUser.objects.filter(
-            username=username,
-            email=email
-        ).exists()
-        if existing_user:
-            return Response(status=status.HTTP_200_OK)
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.save()
-        confirmation_code = generate_confirmation_code()
-        user.confirmation_code = confirmation_code
-        user.save()
-
-        send_mail(
-            'Confirmation Code',
-            f'Your confirmation code: {confirmation_code}',
-            'from@example.com',
-            [user.email],
-            fail_silently=False,
-        )
-        return Response({
-            'username': user.username,
-            'email': user.email
-        }, status=status.HTTP_200_OK)
+        if CustomUser.objects.filter(
+                username=request.data.get('username'),
+                email=request.data.get('email')):
+            return Response(
+                {'message': 'Пользователь уже зарегистрирован'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            username = serializer.validated_data['username']
+            email = serializer.validated_data['email']
+            user = serializer.save()
+            confirmation_code = default_token_generator.make_token(user)
+            user.confirmation_code = confirmation_code
+            user.save()
+            send_mail(
+                'Confirmation Code',
+                f'Your confirmation code: {confirmation_code}',
+                from_email=('from@)' + settings.DOMAIN_NAME),
+                recipient_list=[email],
+                fail_silently=False,)
+            return Response({
+                'username': username,
+                'email': email
+            }, status=status.HTTP_200_OK)
 
 
 class CustomTokenObtainPairView(CreateAPIView):
@@ -184,23 +169,19 @@ class CustomTokenObtainPairView(CreateAPIView):
     Класс-создатель JWTToken по username и confirmation_code.
     """
     queryset = CustomUser.objects.all()
-    serializer_class = CustomTokenObtainPairSerializer
     permission_classes = (AllowAny,)
 
     def create(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        confirmation_code = request.data.get('confirmation_code')
-        if username and confirmation_code:
-            user = get_object_or_404(CustomUser, username=username)
-            if user.confirmation_code != confirmation_code:
+        serializer = CustomTokenDateNotNull(data=request.data)
+        if serializer.is_valid():
+            user = get_object_or_404(
+                CustomUser, username=serializer.validated_data['username'])
+            serializer = CustomTokenCodeValidate(user, data=request.data)
+            if serializer.is_valid():
+                refresh = RefreshToken.for_user(user=user)
+                access_token = str(refresh.access_token)
                 return Response(
-                    {'error': 'Проверьте корректность введеных данных'},
-                    status=status.HTTP_400_BAD_REQUEST)
-
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            return Response({'token': access_token}, status=status.HTTP_200_OK)
-
+                    {'token': access_token}, status=status.HTTP_200_OK)
         return Response(
             {'error': 'Проверьте корректность введеных данных'},
             status=status.HTTP_400_BAD_REQUEST)
@@ -224,11 +205,9 @@ class UserProfileView(APIView):
             data=request.data,
             partial=True
         )
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.validated_data,
-                            status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):

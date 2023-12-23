@@ -4,7 +4,6 @@ from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueValidator
-
 from reviews.models import Category, Comment, CustomUser, Genre, Review, Title
 
 
@@ -129,29 +128,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
             ), validate_username_not_me
         ]
     )
-    email = serializers.EmailField(
-        max_length=254,
-        validators=[UniqueValidator(queryset=CustomUser.objects.all())]
-    )
-    first_name = serializers.CharField(
-        max_length=150,
-        required=False,
-        allow_blank=True
-    )
-    last_name = serializers.CharField(
-        max_length=150,
-        required=False,
-        allow_blank=True
-    )
-    bio = serializers.CharField(
-        max_length=255,
-        required=False,
-        allow_blank=True
-    )
-    role = serializers.ChoiceField(
-        choices=CustomUser.ROLE_CHOICES,
-        required=False
-    )
 
     class Meta:
         model = CustomUser
@@ -159,27 +135,25 @@ class CustomUserSerializer(serializers.ModelSerializer):
                   'last_name', 'bio', 'role')
 
 
-class CustomTokenObtainPairSerializer(serializers.ModelSerializer):
+class CustomTokenDateNotNull(serializers.ModelSerializer):
     """Сериализатор токена."""
-
-    def validate(self, data):
-        username = data.get('username')
-        confirmation_code = data.get('confirmation_code')
-
-        if not username or not confirmation_code:
-            raise serializers.ValidationError('Необходимо указать username'
-                                              ' и confirmation_code')
-
-        try:
-            CustomUser.objects.get(username=username,
-                                   confirmation_code=confirmation_code)
-        except CustomUser.DoesNotExist:
-            raise serializers.ValidationError('Пользователь с указанными'
-                                              ' данными не найден')
+    confirmation_code = serializers.CharField(max_length=100, required=True)
+    username = serializers.CharField(max_length=150, required=True)
 
     class Meta:
         model = CustomUser
         fields = ('username', 'confirmation_code')
+        read_only_fields = ['username', 'confirmation_code']
+
+
+class CustomTokenCodeValidate(CustomTokenDateNotNull):
+    """Сериализатор токена."""
+
+    def validate_confirmation_code(self, value):
+        if not value or self.instance.confirmation_code != value:
+            raise serializers.ValidationError(
+                'confirmation_code пустой или указан не верно')
+        return value
 
 
 class UserProfileSerializer(CustomUserSerializer):

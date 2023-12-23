@@ -4,10 +4,14 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+
     ROLE_CHOICES = (
-        ('user', 'User'),
-        ('moderator', 'Moderator'),
-        ('admin', 'Administrator'),
+        (USER, 'User'),
+        (MODERATOR, 'Moderator'),
+        (ADMIN, 'Administrator'),
     )
 
     bio = models.TextField('Биография', blank=True)
