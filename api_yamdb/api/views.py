@@ -1,16 +1,6 @@
 import random
 import string
 
-from api.filters import TitleFilter
-from api.permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
-                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
-from api.serializers import (CategorySerializer, CommentSerializer,
-                             CustomTokenObtainPairSerializer,
-                             CustomUserSerializer, GenreSerializer,
-                             ReviewPatchSerializer, ReviewSerializer,
-                             TitleSafeRequestSerializer,
-                             TitleUnsafeRequestSerializer,
-                             UserProfileSerializer, UserSerializer)
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,6 +11,17 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from .filters import TitleFilter
+from .permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
+                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                             CustomTokenObtainPairSerializer,
+                             CustomUserSerializer, GenreSerializer,
+                             ReviewPatchSerializer, ReviewSerializer,
+                             TitleSafeRequestSerializer,
+                             TitleUnsafeRequestSerializer,
+                             UserProfileSerializer, UserSerializer)
 from reviews.models import Category, CustomUser, Genre, Review, Title
 
 

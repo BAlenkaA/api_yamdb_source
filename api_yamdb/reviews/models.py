@@ -37,11 +37,20 @@ class CustomUser(AbstractUser):
         null=False
     )
 
+    class Meta:
+        ordering = ('username',)
+
+    def __str__(self):
+        return self.username
+
 
 class Genre(models.Model):
     """Модель жанра произведения."""
     name = models.CharField(max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
+
+    class Meta:
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -51,6 +60,9 @@ class Category(models.Model):
     """Модель категории произведения."""
     name = models.CharField(max_length=256)
     slug = models.SlugField(max_length=50, unique=True)
+
+    class Meta:
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -75,6 +87,9 @@ class Title(models.Model):
         null=True
     )
 
+    class Meta:
+        ordering = ('name',)
+
     def __str__(self):
         return self.name
 
@@ -98,6 +113,7 @@ class Review(models.Model):
                                     auto_now_add=True)
 
     class Meta:
+        ordering = ('author',)
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
@@ -105,6 +121,9 @@ class Review(models.Model):
 
             )
         ]
+
+    def __str__(self):
+        return self.text
 
 
 class Comment(models.Model):
@@ -118,3 +137,9 @@ class Comment(models.Model):
         verbose_name='Автор комментария')
     pub_date = models.DateTimeField(verbose_name='Дата комментария',
                                     auto_now_add=True)
+
+    class Meta:
+        ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.text
