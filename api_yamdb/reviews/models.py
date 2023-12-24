@@ -1,10 +1,8 @@
+from datetime import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
-
-MIN_SCORE = 1
-MAX_SCORE = 10
 
 
 class CustomUser(AbstractUser):
@@ -78,15 +76,21 @@ class Category(models.Model):
 
 class Title(models.Model):
     """Модель произведения, к которому пишут отзывы."""
+    MAX_YEAR = datetime.now().year
+    MIN_YEAR = MAX_YEAR - 150
     name = models.CharField(max_length=256)
-    year = models.PositiveIntegerField()
+    year = models.PositiveSmallIntegerField(
+        validators=[
+            MinValueValidator(MIN_YEAR),
+            MaxValueValidator(MAX_YEAR)
+        ]
+    )
     description = models.TextField()
     genre = models.ManyToManyField(
         Genre,
         related_name='titles_for_genre',
         blank=True,
     )
-    rating = models.IntegerField(default=None, null=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -104,6 +108,8 @@ class Title(models.Model):
 
 class Review(models.Model):
     """Модель отзыва на произведение."""
+    MIN_SCORE = 1
+    MAX_SCORE = 10
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews_for_title',
         verbose_name='Отзыв')
@@ -121,7 +127,7 @@ class Review(models.Model):
                                     auto_now_add=True)
 
     class Meta:
-        ordering = ('author',)
+        ordering = ('-pub_date',)
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],

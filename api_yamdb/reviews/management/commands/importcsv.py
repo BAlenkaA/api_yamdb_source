@@ -4,6 +4,7 @@ import pandas
 from django import apps
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
 from reviews.models import Category, Comment, Genre, Review, Title
 
 
@@ -14,7 +15,7 @@ class Command(BaseCommand):
     в каталоге "static/data/" относительно корня проекта.
     """
 
-    CSV_DIRECTORY = os.getcwd() + "/static/data/"
+    CSV_DIRECTORY = os.getcwd() + '/static/data/'
     CSV_TO_MODEL_CORRESPONDENCE = {
         'users.csv': get_user_model(),
         'category.csv': Category,
@@ -30,15 +31,15 @@ class Command(BaseCommand):
 
     def fix_tables(self):
         """Функция, исправляющая ошибки в названии столбцов в
-        файлах "titles.csv", "review.csv", "comments.csv"."""
+        файлах 'titles.csv', 'review.csv', 'comments.csv'."""
         replace_dict = {
-            "titles.csv": "category",
-            "review.csv": "author",
-            "comments.csv": "author"
+            'titles.csv': 'category',
+            'review.csv': 'author',
+            'comments.csv': 'author'
         }
         for csv_file, column in replace_dict.items():
             file_df = pandas.read_csv(self.CSV_DIRECTORY + csv_file)
-            file_df.rename(columns={column: column + "_id"}, inplace=True)
+            file_df.rename(columns={column: column + '_id'}, inplace=True)
             file_df.to_csv(self.CSV_DIRECTORY + csv_file, index=False)
 
     def handle(self, *args, **options):
