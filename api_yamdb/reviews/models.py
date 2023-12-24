@@ -4,6 +4,11 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+MAX_SCORE = 10
+MIN_SCORE = 1
+MAX_YEAR = datetime.now().year
+MIN_YEAR = MAX_YEAR - 150
+
 
 class CustomUser(AbstractUser):
     USER = 'user'
@@ -76,8 +81,6 @@ class Category(models.Model):
 
 class Title(models.Model):
     """Модель произведения, к которому пишут отзывы."""
-    MAX_YEAR = datetime.now().year
-    MIN_YEAR = MAX_YEAR - 150
     name = models.CharField(max_length=256)
     year = models.PositiveSmallIntegerField(
         validators=[
@@ -108,8 +111,6 @@ class Title(models.Model):
 
 class Review(models.Model):
     """Модель отзыва на произведение."""
-    MIN_SCORE = 1
-    MAX_SCORE = 10
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews_for_title',
         verbose_name='Отзыв')

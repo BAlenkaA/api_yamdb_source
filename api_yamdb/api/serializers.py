@@ -41,8 +41,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError(
                 'Нельзя отправить отзыв на этот фильм второй раз')
-        else:
-            return data
+        return data
 
 
 class ReviewPatchSerializer(serializers.ModelSerializer):

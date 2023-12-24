@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -11,19 +12,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api_yamdb import settings
+from api.filters import TitleFilter
+from api.permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly,
+                             IsOwner, IsOwnerIsModeratorIsAdminOrReadOnly)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             CustomTokenCodeValidate, CustomTokenDateNotNull,
+                             CustomUserSerializer, GenreSerializer,
+                             ReviewPatchSerializer, ReviewSerializer,
+                             TitleSafeRequestSerializer,
+                             TitleUnsafeRequestSerializer,
+                             UserProfileSerializer, UserSerializer)
 from reviews.models import Category, CustomUser, Genre, Review, Title
-
-from .filters import TitleFilter
-from .permissions import (IsAdminUser, IsModeratorIsAdminOrReadonly, IsOwner,
-                          IsOwnerIsModeratorIsAdminOrReadOnly)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          CustomTokenCodeValidate, CustomTokenDateNotNull,
-                          CustomUserSerializer, GenreSerializer,
-                          ReviewPatchSerializer, ReviewSerializer,
-                          TitleSafeRequestSerializer,
-                          TitleUnsafeRequestSerializer, UserProfileSerializer,
-                          UserSerializer)
 
 
 class ListCreateDeleteModelViewSet(mixins.ListModelMixin,
@@ -143,25 +142,24 @@ class UserSignUpView(CreateAPIView):
                 {'message': 'Пользователь уже зарегистрирован'},
                 status=status.HTTP_200_OK
             )
-        else:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            username = serializer.validated_data['username']
-            email = serializer.validated_data['email']
-            user = serializer.save()
-            confirmation_code = default_token_generator.make_token(user)
-            user.confirmation_code = confirmation_code
-            user.save()
-            send_mail(
-                'Confirmation Code',
-                f'Your confirmation code: {confirmation_code}',
-                from_email=('from@' + settings.DOMAIN_NAME),
-                recipient_list=[email],
-                fail_silently=False,)
-            return Response({
-                'username': username,
-                'email': email
-            }, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
+        user = serializer.save()
+        confirmation_code = default_token_generator.make_token(user)
+        user.confirmation_code = confirmation_code
+        user.save()
+        send_mail(
+            'Confirmation Code',
+            f'Your confirmation code: {confirmation_code}',
+            from_email=('from@' + settings.DOMAIN_NAME),
+            recipient_list=[email],
+            fail_silently=False,)
+        return Response({
+            'username': username,
+            'email': email
+        }, status=status.HTTP_200_OK)
 
 
 class CustomTokenObtainPairView(CreateAPIView):
